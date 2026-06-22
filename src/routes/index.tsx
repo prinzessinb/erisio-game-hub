@@ -73,7 +73,9 @@ function Home() {
     <div style={S.page}>
       <header style={S.header}>
         {logoSrc ? (
-          <img src={logoSrc} alt={t.brand} style={S.logo} onError={() => setLogoSrc("")} />
+          <div style={S.logoBox}>
+            <img src={logoSrc} alt={t.brand} style={S.logo} onError={() => setLogoSrc("")} />
+          </div>
         ) : (
           <div style={S.brand}>{t.brand}</div>
         )}
@@ -97,7 +99,8 @@ const S: Record<string, CSSProperties> = {
   page: { fontFamily: "'Arial Narrow', Arial, sans-serif", color: "#2E2A32", background: "#F6F5F8", minHeight: "100vh" },
   header: { background: "#011E4B", color: "#fff", padding: "14px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" },
   brand: { fontFamily: "Arial, sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: ".3px" },
-  logo: { height: 40, width: "auto", objectFit: "contain", display: "block" },
+  logoBox: { height: 56, overflow: "hidden", display: "flex", alignItems: "center", marginTop: -14, marginBottom: -14 },
+  logo: { height: 112, width: "auto", objectFit: "contain", display: "block" },
   langBtn: { background: "transparent", border: "1px solid currentColor", color: "inherit", borderRadius: 8, padding: "4px 10px", fontFamily: "Arial, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" },
   main: { maxWidth: 720, margin: "0 auto", padding: "64px 22px" },
   h1: { fontFamily: "Arial, sans-serif", fontWeight: 700, color: "#011E4B", fontSize: 34, margin: "0 0 14px" },
