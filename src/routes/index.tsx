@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Route = createFileRoute('/')({ component: Home });
 
@@ -16,7 +17,16 @@ function detectLang(): Lang { try { return new URLSearchParams(window.location.s
 
 function Home() {
   const [lang, setLang] = useState<Lang>(detectLang());
+  const [logoSrc, setLogoSrc] = useState<string | null>(null);
   const t = TT[lang];
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.storage.from('branding').createSignedUrl('logo.png', 60 * 60);
+        if (data?.signedUrl) setLogoSrc(data.signedUrl);
+      } catch {}
+    })();
+  }, []);
   function toggleLang() {
     const nl: Lang = lang === 'fr' ? 'en' : 'fr';
     setLang(nl);
@@ -28,7 +38,11 @@ function Home() {
       <div style={S.veil} />
       <div style={S.content}>
         <header style={S.header}>
-          <div style={S.brand}>{t.brand}</div>
+          {logoSrc ? (
+            <div style={S.logoBox}><img src={logoSrc} alt={t.brand} style={S.logo} /></div>
+          ) : (
+            <div style={S.brand}>{t.brand}</div>
+          )}
           <button style={S.langBtn} onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
         </header>
         <main style={S.main}>
@@ -52,6 +66,8 @@ const S: Record<string, CSSProperties> = {
   content: { position: 'relative', zIndex: 2 },
   header: { background: 'transparent', color: '#fff', padding: '14px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   brand: { fontFamily: 'Arial, sans-serif', fontWeight: 700, fontSize: 20, letterSpacing: '.3px' },
+  logoBox: { height: 56, overflow: 'hidden', display: 'flex', alignItems: 'center', marginTop: -14, marginBottom: -14 },
+  logo: { height: 112, width: 'auto', objectFit: 'contain', display: 'block' },
   langBtn: { background: 'transparent', border: '1px solid currentColor', color: 'inherit', borderRadius: 8, padding: '4px 10px', fontFamily: 'Arial, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' },
   main: { maxWidth: 820, margin: '0 auto', padding: '12vh 22px 64px' },
   glass: { maxWidth: 720, background: 'rgba(255, 255, 255, 0.10)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid rgba(255, 255, 255, 0.22)', borderRadius: 18, padding: '40px 36px', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.35)' },
