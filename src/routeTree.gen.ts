@@ -10,33 +10,44 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as JeuEtatsFinanciersK7p2x9m4q8a3RouteImport } from './routes/jeu.etats-financiers-k7p2x9m4q8a3'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JeuEtatsFinanciersK7p2x9m4q8a3Route =
+  JeuEtatsFinanciersK7p2x9m4q8a3RouteImport.update({
+    id: '/jeu/etats-financiers-k7p2x9m4q8a3',
+    path: '/jeu/etats-financiers-k7p2x9m4q8a3',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/jeu/etats-financiers-k7p2x9m4q8a3'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/jeu/etats-financiers-k7p2x9m4q8a3'
+  id: '__root__' | '/' | '/jeu/etats-financiers-k7p2x9m4q8a3'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  JeuEtatsFinanciersK7p2x9m4q8a3Route: typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +59,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jeu/etats-financiers-k7p2x9m4q8a3': {
+      id: '/jeu/etats-financiers-k7p2x9m4q8a3'
+      path: '/jeu/etats-financiers-k7p2x9m4q8a3'
+      fullPath: '/jeu/etats-financiers-k7p2x9m4q8a3'
+      preLoaderRoute: typeof JeuEtatsFinanciersK7p2x9m4q8a3RouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  JeuEtatsFinanciersK7p2x9m4q8a3Route: JeuEtatsFinanciersK7p2x9m4q8a3Route,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
