@@ -71,40 +71,47 @@ function Home() {
 
   return (
     <div style={S.page}>
-      <header style={S.header}>
-        {logoSrc ? (
-          <div style={S.logoBox}>
-            <img src={logoSrc} alt={t.brand} style={S.logo} onError={() => setLogoSrc("")} />
-          </div>
-        ) : (
-          <div style={S.brand}>{t.brand}</div>
-        )}
-        <button style={S.langBtn} onClick={toggleLang}>
-          {lang === "fr" ? "EN" : "FR"}
-        </button>
-      </header>
-      <main style={S.main}>
-        <h1 style={S.h1}>{t.title}</h1>
-        <p style={S.intro}>{t.intro}</p>
-        <p style={S.access}>{t.access}</p>
-        <a style={S.btn} href="https://erisio.com">
-          {t.site}
-        </a>
-      </main>
+      <video style={S.video} src="/Video.mp4" autoPlay muted loop playsInline />
+      <div style={S.veil} />
+      <div style={S.content}>
+        <header style={S.header}>
+          {logoSrc ? (
+            <div style={S.logoBox}>
+              <img src={logoSrc} alt={t.brand} style={S.logo} onError={() => setLogoSrc("")} />
+            </div>
+          ) : (
+            <div style={S.brand}>{t.brand}</div>
+          )}
+          <button style={S.langBtn} onClick={toggleLang}>
+            {lang === "fr" ? "EN" : "FR"}
+          </button>
+        </header>
+        <main style={S.main}>
+          <h1 style={S.h1}>{t.title}</h1>
+          <p style={S.intro}>{t.intro}</p>
+          <p style={S.access}>{t.access}</p>
+          <a style={S.btn} href="https://erisio.com">
+            {t.site}
+          </a>
+        </main>
+      </div>
     </div>
   );
 }
 
 const S: Record<string, CSSProperties> = {
-  page: { fontFamily: "'Arial Narrow', Arial, sans-serif", color: "#2E2A32", background: "#F6F5F8", minHeight: "100vh" },
-  header: { background: "#011E4B", color: "#fff", padding: "14px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" },
+  page: { position: "relative", minHeight: "100vh", background: "#011E4B", color: "#fff", fontFamily: "'Arial Narrow', Arial, sans-serif", overflow: "hidden" },
+  video: { position: "fixed", inset: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: 0, pointerEvents: "none" },
+  veil: { position: "fixed", inset: 0, background: "rgba(1, 30, 75, 0.55)", zIndex: 1, pointerEvents: "none" },
+  content: { position: "relative", zIndex: 2 },
+  header: { background: "transparent", color: "#fff", padding: "14px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" },
   brand: { fontFamily: "Arial, sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: ".3px" },
   logoBox: { height: 56, overflow: "hidden", display: "flex", alignItems: "center", marginTop: -14, marginBottom: -14 },
   logo: { height: 112, width: "auto", objectFit: "contain", display: "block" },
   langBtn: { background: "transparent", border: "1px solid currentColor", color: "inherit", borderRadius: 8, padding: "4px 10px", fontFamily: "Arial, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" },
-  main: { maxWidth: 720, margin: "0 auto", padding: "64px 22px" },
-  h1: { fontFamily: "Arial, sans-serif", fontWeight: 700, color: "#011E4B", fontSize: 34, margin: "0 0 14px" },
-  intro: { fontSize: 19, lineHeight: 1.55, marginBottom: 14 },
-  access: { fontSize: 16, color: "#555", borderLeft: "4px solid #8C577F", paddingLeft: 14, marginBottom: 28 },
-  btn: { display: "inline-block", background: "#011E4B", color: "#fff", fontFamily: "Arial, sans-serif", fontWeight: 700, fontSize: 15, padding: "11px 20px", borderRadius: 8, textDecoration: "none" },
+  main: { maxWidth: 720, margin: "0 auto", padding: "14vh 22px 64px" },
+  h1: { fontFamily: "Arial, sans-serif", fontWeight: 700, color: "#fff", fontSize: 40, lineHeight: 1.12, margin: "0 0 16px" },
+  intro: { fontSize: 20, lineHeight: 1.55, marginBottom: 16, color: "#fff" },
+  access: { fontSize: 16, color: "rgba(255, 255, 255, 0.85)", borderLeft: "4px solid #8C577F", paddingLeft: 14, marginBottom: 30 },
+  btn: { display: "inline-block", background: "#fff", color: "#011E4B", fontFamily: "Arial, sans-serif", fontWeight: 700, fontSize: 15, padding: "11px 20px", borderRadius: 8, textDecoration: "none" },
 };
