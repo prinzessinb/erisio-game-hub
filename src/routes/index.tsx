@@ -51,7 +51,7 @@ function Home() {
             <h2 style={S.title}>{t.title}</h2>
             <p style={S.intro}>{t.intro}</p>
             <p style={S.access}>{t.access}</p>
-            <a style={S.btn} href="https://erisio.com">{t.site}</a>
+            <a style={S.btn} href="https://www.erisio.com" target="_blank" rel="noopener noreferrer">{t.site}</a>
           </div>
         </main>
       </div>
