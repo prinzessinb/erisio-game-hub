@@ -14,7 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      connections: {
+        Row: {
+          created_at: string
+          id: string
+          src: string
+          team: string
+          tgt: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          src: string
+          team: string
+          tgt: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          src?: string
+          team?: string
+          tgt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connections_team_fkey"
+            columns: ["team"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["team"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          correct: number
+          created_at: string
+          score: number
+          started_at: string
+          team: string
+          updated_at: string
+          validated: boolean
+        }
+        Insert: {
+          correct?: number
+          created_at?: string
+          score?: number
+          started_at?: string
+          team: string
+          updated_at?: string
+          validated?: boolean
+        }
+        Update: {
+          correct?: number
+          created_at?: string
+          score?: number
+          started_at?: string
+          team?: string
+          updated_at?: string
+          validated?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
