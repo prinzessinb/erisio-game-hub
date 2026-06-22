@@ -81,6 +81,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Applications et outils de formation d'Erisio Advisory." },
       { name: "robots", content: "noindex, nofollow" },
       { name: "googlebot", content: "noindex, nofollow" },
+      { property: "og:title", content: "Erisio Advisory" },
+      { name: "twitter:title", content: "Erisio Advisory" },
+      { property: "og:description", content: "Applications et outils de formation d'Erisio Advisory." },
+      { name: "twitter:description", content: "Applications et outils de formation d'Erisio Advisory." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/50f4581c-b791-42d5-9708-5e2d27e7e393/id-preview-be19f180--20cc991d-613f-4444-bb9a-750b0047cbdd.lovable.app-1782159907197.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/50f4581c-b791-42d5-9708-5e2d27e7e393/id-preview-be19f180--20cc991d-613f-4444-bb9a-750b0047cbdd.lovable.app-1782159907197.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       {
