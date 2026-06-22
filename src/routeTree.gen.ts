@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ParametresRouteImport } from './routes/parametres'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JeuEtatsFinanciersK7p2x9m4q8a3RouteImport } from './routes/jeu.etats-financiers-k7p2x9m4q8a3'
 
+const ParametresRoute = ParametresRouteImport.update({
+  id: '/parametres',
+  path: '/parametres',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -26,32 +32,43 @@ const JeuEtatsFinanciersK7p2x9m4q8a3Route =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/parametres': typeof ParametresRoute
   '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/parametres': typeof ParametresRoute
   '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/parametres': typeof ParametresRoute
   '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/jeu/etats-financiers-k7p2x9m4q8a3'
+  fullPaths: '/' | '/parametres' | '/jeu/etats-financiers-k7p2x9m4q8a3'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/jeu/etats-financiers-k7p2x9m4q8a3'
-  id: '__root__' | '/' | '/jeu/etats-financiers-k7p2x9m4q8a3'
+  to: '/' | '/parametres' | '/jeu/etats-financiers-k7p2x9m4q8a3'
+  id: '__root__' | '/' | '/parametres' | '/jeu/etats-financiers-k7p2x9m4q8a3'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ParametresRoute: typeof ParametresRoute
   JeuEtatsFinanciersK7p2x9m4q8a3Route: typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/parametres': {
+      id: '/parametres'
+      path: '/parametres'
+      fullPath: '/parametres'
+      preLoaderRoute: typeof ParametresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ParametresRoute: ParametresRoute,
   JeuEtatsFinanciersK7p2x9m4q8a3Route: JeuEtatsFinanciersK7p2x9m4q8a3Route,
 }
 export const routeTree = rootRouteImport
