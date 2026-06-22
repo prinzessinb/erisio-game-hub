@@ -12,9 +12,12 @@ export const Route = createFileRoute("/parametres")({
   component: Settings,
 });
 
-function logoUrl() {
-  const { data } = supabase.storage.from("branding").getPublicUrl("logo.png");
-  return `${data.publicUrl}?t=${Date.now()}`;
+async function logoUrl() {
+  const { data, error } = await supabase.storage
+    .from("branding")
+    .createSignedUrl("logo.png", 60 * 60);
+  if (error || !data) return "";
+  return data.signedUrl;
 }
 
 function Settings() {
@@ -23,7 +26,7 @@ function Settings() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setPreview(logoUrl());
+    logoUrl().then(setPreview);
   }, []);
 
   async function handleFile(file: File) {
@@ -38,7 +41,7 @@ function Settings() {
       return;
     }
     setStatus("Logo mis à jour ✓");
-    setPreview(logoUrl());
+    setPreview(await logoUrl());
   }
 
   async function handleRemove() {

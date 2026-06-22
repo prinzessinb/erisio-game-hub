@@ -42,20 +42,22 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const [lang, setLang] = useState<Lang>(detectLang());
-  const [logoOk, setLogoOk] = useState(true);
+  const [logoSrc, setLogoSrc] = useState<string>("");
   const t = TT[lang];
 
-  const [logoSrc] = useState(() => {
-    const { data } = supabase.storage.from("branding").getPublicUrl("logo.png");
-    return data.publicUrl;
-  });
-
   useEffect(() => {
-    const img = new Image();
-    img.onload = () => setLogoOk(true);
-    img.onerror = () => setLogoOk(false);
-    img.src = logoSrc;
-  }, [logoSrc]);
+    let cancelled = false;
+    supabase.storage
+      .from("branding")
+      .createSignedUrl("logo.png", 60 * 60)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        setLogoSrc(error || !data ? "" : data.signedUrl);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggleLang() {
     const nl: Lang = lang === "fr" ? "en" : "fr";
@@ -70,8 +72,8 @@ function Home() {
   return (
     <div style={S.page}>
       <header style={S.header}>
-        {logoOk ? (
-          <img src={logoSrc} alt={t.brand} style={S.logo} />
+        {logoSrc ? (
+          <img src={logoSrc} alt={t.brand} style={S.logo} onError={() => setLogoSrc("")} />
         ) : (
           <div style={S.brand}>{t.brand}</div>
         )}
