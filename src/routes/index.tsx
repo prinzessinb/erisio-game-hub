@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type Lang = "fr" | "en";
 
@@ -41,7 +42,20 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const [lang, setLang] = useState<Lang>(detectLang());
+  const [logoOk, setLogoOk] = useState(true);
   const t = TT[lang];
+
+  const [logoSrc] = useState(() => {
+    const { data } = supabase.storage.from("branding").getPublicUrl("logo.png");
+    return data.publicUrl;
+  });
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setLogoOk(true);
+    img.onerror = () => setLogoOk(false);
+    img.src = logoSrc;
+  }, [logoSrc]);
 
   function toggleLang() {
     const nl: Lang = lang === "fr" ? "en" : "fr";
@@ -56,7 +70,11 @@ function Home() {
   return (
     <div style={S.page}>
       <header style={S.header}>
-        <div style={S.brand}>{t.brand}</div>
+        {logoOk ? (
+          <img src={logoSrc} alt={t.brand} style={S.logo} />
+        ) : (
+          <div style={S.brand}>{t.brand}</div>
+        )}
         <button style={S.langBtn} onClick={toggleLang}>
           {lang === "fr" ? "EN" : "FR"}
         </button>
@@ -77,6 +95,7 @@ const S: Record<string, CSSProperties> = {
   page: { fontFamily: "'Arial Narrow', Arial, sans-serif", color: "#2E2A32", background: "#F6F5F8", minHeight: "100vh" },
   header: { background: "#011E4B", color: "#fff", padding: "14px 22px", display: "flex", alignItems: "center", justifyContent: "space-between" },
   brand: { fontFamily: "Arial, sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: ".3px" },
+  logo: { height: 40, width: "auto", objectFit: "contain", display: "block" },
   langBtn: { background: "transparent", border: "1px solid currentColor", color: "inherit", borderRadius: 8, padding: "4px 10px", fontFamily: "Arial, sans-serif", fontWeight: 700, fontSize: 13, cursor: "pointer" },
   main: { maxWidth: 720, margin: "0 auto", padding: "64px 22px" },
   h1: { fontFamily: "Arial, sans-serif", fontWeight: 700, color: "#011E4B", fontSize: 34, margin: "0 0 14px" },
