@@ -71,7 +71,7 @@ const S: Record<string, CSSProperties> = {
   langBtn: { background: 'transparent', border: '1px solid currentColor', color: 'inherit', borderRadius: 8, padding: '4px 10px', fontFamily: 'Arial, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' },
   main: { maxWidth: 820, margin: '0 auto', padding: '12vh 22px 64px' },
   glass: { maxWidth: 720, background: 'rgba(255, 255, 255, 0.10)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', border: '1px solid rgba(255, 255, 255, 0.22)', borderRadius: 18, padding: '40px 36px', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.35)' },
-  slogan: { fontFamily: 'Arial, sans-serif', fontWeight: 700, color: '#F6F5F8', fontSize: 44, lineHeight: 1.1, margin: '0 0 12px' },
+  slogan: { fontFamily: 'Arial, sans-serif', fontWeight: 200, fontStyle: 'italic', textTransform: 'uppercase', letterSpacing: '.06em', color: '#F6F5F8', fontSize: 44, lineHeight: 1.1, margin: '0 0 12px' },
   title: { fontFamily: 'Arial, sans-serif', fontWeight: 700, color: '#fff', fontSize: 22, margin: '0 0 14px' },
   intro: { fontSize: 19, lineHeight: 1.55, marginBottom: 14, color: '#fff' },
   access: { fontSize: 16, color: 'rgba(255, 255, 255, 0.85)', borderLeft: '4px solid #8C577F', paddingLeft: 14, marginBottom: 28 },
