@@ -60,20 +60,20 @@ function Home() {
 }
 
 const S: Record<string, CSSProperties> = {
-  page: { position: 'relative', minHeight: '100vh', background: '#011E4B', color: '#fff', fontFamily: 'Arial, sans-serif', overflow: 'hidden' },
+  page: { position: 'relative', minHeight: '100vh', background: '#011E4B', color: '#fff', fontFamily: "'Arial Narrow', Arial, sans-serif", overflow: 'hidden' },
   video: { position: 'fixed', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0, pointerEvents: 'none' },
   veil: { position: 'fixed', inset: 0, background: 'rgba(1, 30, 75, 0.40)', zIndex: 1, pointerEvents: 'none' },
   content: { position: 'relative', zIndex: 2 },
   header: { background: 'transparent', color: '#fff', padding: '14px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  brand: { fontFamily: 'Arial, sans-serif', fontWeight: 700, fontSize: 20, letterSpacing: '.3px' },
+  brand: { fontFamily: "'Arial Narrow', Arial, sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: '.3px' },
   logoBox: { height: 56, overflow: 'hidden', display: 'flex', alignItems: 'center', marginTop: -14, marginBottom: -14 },
   logo: { height: 112, width: 'auto', objectFit: 'contain', display: 'block' },
-  langBtn: { background: 'transparent', border: '1px solid currentColor', color: 'inherit', borderRadius: 8, padding: '4px 10px', fontFamily: 'Arial, sans-serif', fontWeight: 700, fontSize: 13, cursor: 'pointer' },
+  langBtn: { background: 'transparent', border: '1px solid currentColor', color: 'inherit', borderRadius: 8, padding: '4px 10px', fontFamily: "'Arial Narrow', Arial, sans-serif", fontWeight: 700, fontSize: 13, cursor: 'pointer' },
   main: { maxWidth: 820, margin: '0 auto', padding: '12vh 22px 64px' },
   glass: { maxWidth: 720, background: 'rgba(255, 255, 255, 0.10)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255, 255, 255, 0.22)', borderRadius: 18, padding: '40px 36px', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.35)' },
-  slogan: { fontFamily: 'Arial, sans-serif', fontWeight: 700, color: '#fff', fontSize: 44, lineHeight: 1.1, letterSpacing: '-.01em', margin: '0 0 14px' },
-  title: { fontFamily: 'Arial, sans-serif', fontWeight: 700, color: '#fff', fontSize: 22, margin: '0 0 14px' },
-  intro: { fontFamily: 'Arial, sans-serif', fontWeight: 400, fontSize: 19, lineHeight: 1.55, marginBottom: 14, color: '#fff' },
-  access: { fontFamily: 'Arial, sans-serif', fontWeight: 400, fontSize: 16, color: 'rgba(255, 255, 255, 0.85)', borderLeft: '4px solid #8C577F', paddingLeft: 14, marginBottom: 28 },
-  btn: { display: 'inline-block', background: 'rgba(255,255,255,0.85)', color: '#011E4B', fontFamily: 'Arial, sans-serif', fontWeight: 700, fontSize: 15, padding: '11px 20px', borderRadius: 8, textDecoration: 'none' },
+  slogan: { fontFamily: "'Arial Narrow', Arial, sans-serif", fontWeight: 700, color: '#fff', fontSize: 44, lineHeight: 1.1, letterSpacing: '-.01em', margin: '0 0 14px' },
+  title: { fontFamily: "'Arial Narrow', Arial, sans-serif", fontWeight: 700, color: '#fff', fontSize: 22, margin: '0 0 14px' },
+  intro: { fontFamily: "'Arial Narrow', Arial, sans-serif", fontWeight: 400, fontSize: 19, lineHeight: 1.55, marginBottom: 14, color: '#fff' },
+  access: { fontFamily: "'Arial Narrow', Arial, sans-serif", fontWeight: 400, fontSize: 16, color: 'rgba(255, 255, 255, 0.85)', borderLeft: '4px solid #8C577F', paddingLeft: 14, marginBottom: 28 },
+  btn: { display: 'inline-block', background: 'rgba(255,255,255,0.85)', color: '#011E4B', fontFamily: "'Arial Narrow', Arial, sans-serif", fontWeight: 700, fontSize: 15, padding: '11px 20px', borderRadius: 8, textDecoration: 'none' },
 };
