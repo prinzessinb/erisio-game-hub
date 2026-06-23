@@ -104,6 +104,11 @@ function curve(a: { x: number; y: number }, b: { x: number; y: number }) { const
 function fmt(s: number) { const m = Math.floor(s / 60), x = s % 60; return `${m < 10 ? '0' : ''}${m}:${x < 10 ? '0' : ''}${x}`; }
 function detectLang(): Lang { try { return new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'fr'; } catch { return 'fr'; } }
 function tempId() { try { return crypto.randomUUID(); } catch { return 't' + Date.now() + Math.round(performance.now()); } }
+function parseStartedAt(value: string | null | undefined) {
+  if (!value) return null;
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? time : null;
+}
 
 function EtatsFinanciers() {
   const [lang, setLang] = useState<Lang>(detectLang());
@@ -159,7 +164,7 @@ function EtatsFinanciers() {
     const up = await supabase.from('rooms').upsert({ team: tm, started_at: null }, { onConflict: 'team', ignoreDuplicates: true });
     if (up.error) { console.error('room upsert', up.error); setErr(up.error.message); }
     let { data: room } = await supabase.from('rooms').select('*').eq('team', tm).single();
-    const startedMs = room?.started_at ? new Date(room.started_at).getTime() : null;
+    const startedMs = parseStartedAt(room?.started_at);
     const isExpired = startedMs != null && Date.now() - startedMs >= DURATION * 1000;
     // If the previous round on this team was already finished or expired, start a fresh one.
     if (room && (room.validated || isExpired)) {
@@ -169,7 +174,7 @@ function EtatsFinanciers() {
       if (reset.error) { console.error('room reset', reset.error); setErr(reset.error.message); }
       if (reset.data) room = reset.data;
     }
-    setStartedAt(room && room.started_at ? new Date(room.started_at).getTime() : null);
+    setStartedAt(parseStartedAt(room?.started_at));
     await refetch(tm);
     setTeam(tm);
     setPhase('play');
@@ -177,11 +182,18 @@ function EtatsFinanciers() {
 
 
   async function startTimer() {
-    if (startedAt) return;
+    const tm = teamRef.current;
+    if (startedAt != null || !tm) return;
     const now = new Date().toISOString();
-    setStartedAt(Date.now());
-    const { error } = await supabase.from('rooms').update({ started_at: now, validated: false, score: 0, correct: 0 }).eq('team', team);
-    if (error) console.error('start', error);
+    setRemaining(DURATION);
+    const { data, error } = await supabase
+      .from('rooms')
+      .update({ started_at: now, validated: false, score: 0, correct: 0 })
+      .eq('team', tm)
+      .select('started_at')
+      .single();
+    if (error) { console.error('start', error); setErr(error.message); }
+    else setStartedAt(parseStartedAt(data?.started_at));
   }
 
   useEffect(() => {
@@ -191,7 +203,7 @@ function EtatsFinanciers() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `team=eq.${team}` }, (p) => {
         const r: any = p.new; if (!r) return;
         if (r.team !== teamRef.current) return;
-        setStartedAt(r.started_at ? new Date(r.started_at).getTime() : null);
+        setStartedAt(parseStartedAt(r.started_at));
         setValidated(Boolean(r.validated));
         setScore(r.score || 0);
         setCorrect(r.correct || 0);
