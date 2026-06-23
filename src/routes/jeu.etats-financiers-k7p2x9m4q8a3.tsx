@@ -147,17 +147,20 @@ function EtatsFinanciers() {
     // Create the room without a start time; the timer only starts on "Commencer".
     const up = await supabase.from('rooms').upsert({ team: tm, started_at: null }, { onConflict: 'team', ignoreDuplicates: true });
     if (up.error) { console.error('room upsert', up.error); setErr(up.error.message); }
-    const { data: room } = await supabase.from('rooms').select('*').eq('team', tm).single();
-    if (room) {
-      setStartedAt(room.started_at ? new Date(room.started_at).getTime() : null);
-      if (room.validated) { setValidated(true); setScore(room.score || 0); setCorrect(room.correct || 0); }
-    } else {
-      setStartedAt(null);
+    let { data: room } = await supabase.from('rooms').select('*').eq('team', tm).single();
+    // If the previous round on this team was already finished, start a fresh one.
+    if (room && room.validated) {
+      await supabase.from('connections').delete().eq('team', tm);
+      const reset = await supabase.from('rooms').update({ validated: false, score: 0, correct: 0, started_at: null }).eq('team', tm).select('*').single();
+      if (reset.data) room = reset.data;
     }
+    setValidated(false); setScore(0); setCorrect(0); setChecked(false); setHelpMsg(null);
+    setStartedAt(room && room.started_at ? new Date(room.started_at).getTime() : null);
     await refetch(tm);
     setTeam(tm);
-    setPhase(room && room.validated ? 'done' : 'play');
+    setPhase('play');
   }
+
 
   async function startTimer() {
     if (startedAt) return;
