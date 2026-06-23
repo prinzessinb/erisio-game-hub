@@ -125,6 +125,7 @@ function EtatsFinanciers() {
 
   const connsRef = useRef<Conn[]>([]); connsRef.current = conns;
   const validatedRef = useRef(false); validatedRef.current = validated;
+  const teamRef = useRef(''); teamRef.current = team;
 
   function toggleLang() {
     const nl: Lang = lang === 'fr' ? 'en' : 'fr';
@@ -144,17 +145,30 @@ function EtatsFinanciers() {
   async function join() {
     const tm = normTeam(teamInput);
     if (!tm) return;
+    setErr(null);
+    setSelected(null);
+    setConns([]);
+    setStartedAt(null);
+    setRemaining(DURATION);
+    setValidated(false);
+    setScore(0);
+    setCorrect(0);
+    setChecked(false);
+    setHelpMsg(null);
     // Create the room without a start time; the timer only starts on "Commencer".
     const up = await supabase.from('rooms').upsert({ team: tm, started_at: null }, { onConflict: 'team', ignoreDuplicates: true });
     if (up.error) { console.error('room upsert', up.error); setErr(up.error.message); }
     let { data: room } = await supabase.from('rooms').select('*').eq('team', tm).single();
-    // If the previous round on this team was already finished, start a fresh one.
-    if (room && room.validated) {
-      await supabase.from('connections').delete().eq('team', tm);
+    const startedMs = room?.started_at ? new Date(room.started_at).getTime() : null;
+    const isExpired = startedMs != null && Date.now() - startedMs >= DURATION * 1000;
+    // If the previous round on this team was already finished or expired, start a fresh one.
+    if (room && (room.validated || isExpired)) {
+      const del = await supabase.from('connections').delete().eq('team', tm);
+      if (del.error) { console.error('connections reset', del.error); setErr(del.error.message); }
       const reset = await supabase.from('rooms').update({ validated: false, score: 0, correct: 0, started_at: null }).eq('team', tm).select('*').single();
+      if (reset.error) { console.error('room reset', reset.error); setErr(reset.error.message); }
       if (reset.data) room = reset.data;
     }
-    setValidated(false); setScore(0); setCorrect(0); setChecked(false); setHelpMsg(null);
     setStartedAt(room && room.started_at ? new Date(room.started_at).getTime() : null);
     await refetch(tm);
     setTeam(tm);
@@ -166,7 +180,7 @@ function EtatsFinanciers() {
     if (startedAt) return;
     const now = new Date().toISOString();
     setStartedAt(Date.now());
-    const { error } = await supabase.from('rooms').upsert({ team, started_at: now });
+    const { error } = await supabase.from('rooms').update({ started_at: now, validated: false, score: 0, correct: 0 }).eq('team', team);
     if (error) console.error('start', error);
   }
 
@@ -176,8 +190,13 @@ function EtatsFinanciers() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'connections', filter: `team=eq.${team}` }, () => refetch(team))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `team=eq.${team}` }, (p) => {
         const r: any = p.new; if (!r) return;
-        if (r.started_at) setStartedAt(new Date(r.started_at).getTime());
-        if (r.validated) { setValidated(true); setScore(r.score || 0); setCorrect(r.correct || 0); setPhase('done'); }
+        if (r.team !== teamRef.current) return;
+        setStartedAt(r.started_at ? new Date(r.started_at).getTime() : null);
+        setValidated(Boolean(r.validated));
+        setScore(r.score || 0);
+        setCorrect(r.correct || 0);
+        if (r.validated) setPhase('done');
+        else setPhase((prev) => prev === 'done' ? 'play' : prev);
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -192,10 +211,11 @@ function EtatsFinanciers() {
   }, [phase, startedAt]);
 
   async function finalize() {
-    if (validatedRef.current) return;
+    const tm = teamRef.current;
+    if (validatedRef.current || !tm) return;
     const c = connsRef.current.filter(isCorrect).length;
     setValidated(true); setScore(c * 10); setCorrect(c); setPhase('done');
-    const { error } = await supabase.from('rooms').upsert({ team, validated: true, score: c * 10, correct: c });
+    const { error } = await supabase.from('rooms').update({ validated: true, score: c * 10, correct: c }).eq('team', tm);
     if (error) console.error('validate', error);
   }
 
