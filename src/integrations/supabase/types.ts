@@ -51,7 +51,7 @@ export type Database = {
           correct: number
           created_at: string
           score: number
-          started_at: string
+          started_at: string | null
           team: string
           updated_at: string
           validated: boolean
@@ -60,7 +60,7 @@ export type Database = {
           correct?: number
           created_at?: string
           score?: number
-          started_at?: string
+          started_at?: string | null
           team: string
           updated_at?: string
           validated?: boolean
@@ -69,7 +69,7 @@ export type Database = {
           correct?: number
           created_at?: string
           score?: number
-          started_at?: string
+          started_at?: string | null
           team?: string
           updated_at?: string
           validated?: boolean
