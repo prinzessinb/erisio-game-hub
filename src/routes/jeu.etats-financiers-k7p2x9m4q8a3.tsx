@@ -185,7 +185,6 @@ function EtatsFinanciers() {
     const tm = teamRef.current;
     if (startedAt != null || !tm) return;
     const now = new Date().toISOString();
-    setStartedAt(Date.now());
     setRemaining(DURATION);
     const { data, error } = await supabase
       .from('rooms')
@@ -193,7 +192,7 @@ function EtatsFinanciers() {
       .eq('team', tm)
       .select('started_at')
       .single();
-    if (error) console.error('start', error);
+    if (error) { console.error('start', error); setErr(error.message); }
     else setStartedAt(parseStartedAt(data?.started_at));
   }
 
