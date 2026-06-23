@@ -1,0 +1,1 @@
+ALTER TABLE public.rooms ALTER COLUMN started_at DROP NOT NULL; ALTER TABLE public.rooms ALTER COLUMN started_at DROP DEFAULT;
