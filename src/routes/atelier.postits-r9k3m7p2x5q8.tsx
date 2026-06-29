@@ -5,9 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 // Route secrète (lien mystère). Ne pas deviner : seul ce lien donne accès aux ateliers.
 export const Route = createFileRoute('/atelier/postits-r9k3m7p2x5q8')({ component: AtelierPostits });
 
-// Clé animatrice. Le lien animatrice porte ?anim= ; le lien participant ne la porte pas.
+// Clé animatrice. Le lien animatrice porte ?anim=<cette clé> ; le lien participant ne la porte pas.
 const ADMIN_KEY = 'eris-9k2p7x5q';
-const BUCKET = 'atelier';
 const TEMPLATE = '__tpl__'; // équipe « modèle » : le stock préparé par l'animatrice
 
 type Lang = 'fr' | 'en';
@@ -63,6 +62,31 @@ function readParams() {
   catch { return { board: '', anim: false }; }
 }
 
+// Lit un fichier image et le renvoie en data URL. Les gros fichiers sont réduits
+// (max 1400 px, JPEG) pour rester légers : l'image est stockée dans la base, sans bucket.
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read'));
+    reader.onload = () => {
+      const raw = reader.result as string;
+      if (file.size < 700000) { resolve(raw); return; }
+      const img = new Image();
+      img.onerror = () => reject(new Error('img'));
+      img.onload = () => {
+        const max = 1400; let w = img.width, h = img.height;
+        if (w > max || h > max) { const r = Math.min(max / w, max / h); w = Math.round(w * r); h = Math.round(h * r); }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const ctx = c.getContext('2d'); if (!ctx) { resolve(raw); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = raw;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function AtelierPostits() {
   const init = readParams();
   const [lang, setLang] = useState<Lang>(detectLang());
@@ -95,9 +119,9 @@ function AtelierPostits() {
     try { const u = new URL(window.location.href); u.searchParams.set('lang', nl); window.history.replaceState({}, '', u.toString()); } catch {}
   }
 
-  async function fetchNotes(bd: string, tm: string): Promise<Note[]> {
+  async function fetchNotes(bd: string, tm: string) {
     const { data, error } = await supabase.from('atelier_notes').select('id,team,tpl,x,y,w,h,text,color').eq('board', bd).eq('team', tm);
-    if (error) { console.error('fetch', error); setErr(error.message); return []; }
+    if (error) { console.error('fetch', error); setErr(error.message); return [] as Note[]; }
     return (data || []) as Note[];
   }
 
@@ -108,10 +132,11 @@ function AtelierPostits() {
   }
 
   // Une équipe qui arrive sans post-its reçoit une copie du modèle (le stock), à la position de départ.
-  async function cloneTemplateInto(bd: string, tm: string): Promise<Note[]> {
+  async function cloneTemplateInto(bd: string, tm: string) {
     const tpls = await fetchNotes(bd, TEMPLATE);
-    if (!tpls.length) return [];
+    if (!tpls.length) return [] as Note[];
     const rows = tpls.map((s) => ({ id: uid(), board: bd, team: tm, tpl: s.id, x: s.x, y: s.y, w: s.w, h: s.h, text: s.text, color: s.color }));
+    // upsert (board,team,tpl) unique : deux coéquipiers qui arrivent en même temps ne dupliquent pas.
     const { error } = await supabase.from('atelier_notes').upsert(rows, { onConflict: 'board,team,tpl', ignoreDuplicates: true });
     if (error) console.error('clone', error);
     return await fetchNotes(bd, tm);
@@ -166,12 +191,9 @@ function AtelierPostits() {
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f || imageLocked) return;
     setBusy(true); setErr(null);
-    const ext = (f.name.split('.').pop() || 'png').toLowerCase();
-    const up = await supabase.storage.from(BUCKET).upload(`${board}/${uid()}.${ext}`, f, { upsert: true });
+    try { const url = await fileToDataUrl(f); await saveImage(url); }
+    catch { setErr('Image illisible.'); }
     setBusy(false);
-    if (up.error) { setErr(up.error.message); return; }
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(up.data.path);
-    if (data && data.publicUrl) saveImage(data.publicUrl);
   }
   async function toggleImageLock() { const v = !imageLocked; setImageLocked(v); const { error } = await supabase.from('atelier_rooms').update({ image_locked: v }).eq('board', board); if (error) setErr(error.message); }
 
@@ -181,7 +203,7 @@ function AtelierPostits() {
     setNotes((prev) => [...prev, n]);
     const { error } = await supabase.from('atelier_notes').insert({ board, ...n });
     if (error) setErr(error.message);
-    setTimeout(() => { const el = document.querySelector(`[data-id="${n.id}"] textarea`) as HTMLTextAreaElement | null; if (el) el.focus(); }, 0);
+    setTimeout(() => { const el = document.querySelector<HTMLTextAreaElement>(`[data-id="${n.id}"] textarea`); if (el) el.focus(); }, 0);
   }
   const addNote = () => addNoteAt(isAnim ? 0.04 : 0.44, isAnim ? 0.05 : 0.40);
 
@@ -205,7 +227,7 @@ function AtelierPostits() {
   }
 
   /* ---------- Déplacement ---------- */
-  function startDrag(e: React.PointerEvent<HTMLDivElement>, n: Note) {
+  function startDrag(e: React.PointerEvent, n: Note) {
     const target = e.target as HTMLElement;
     if (target.closest('textarea') || target.closest('button')) return;
     e.preventDefault();
@@ -216,6 +238,8 @@ function AtelierPostits() {
     const rect = bd.getBoundingClientRect(); const nb = el.getBoundingClientRect();
     const offX = e.clientX - nb.left, offY = e.clientY - nb.top;
     const wf = nb.width / rect.width, hf = nb.height / rect.height;
+    // On autorise un débordement (jusqu'à ~80% hors du bord) ; la surface n'est pas rognée,
+    // donc le post-it reste visible même posé au-delà du cadre. Le haut reste accessible.
     const calc = (ev: PointerEvent) => ({ x: clamp((ev.clientX - offX - rect.left) / rect.width, -wf * 0.8, 1 - wf * 0.2), y: clamp((ev.clientY - offY - rect.top) / rect.height, -hf * 0.2, 1 - hf * 0.2) });
     const move = (ev: PointerEvent) => patchLocal(n.id, calc(ev));
     const up = (ev: PointerEvent) => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); draggingRef.current = null; writeNow(n.id, calc(ev)); };
@@ -223,13 +247,14 @@ function AtelierPostits() {
   }
 
   /* ---------- Redimensionnement ---------- */
-  function startResize(e: React.PointerEvent<HTMLDivElement>, n: Note) {
+  function startResize(e: React.PointerEvent, n: Note) {
     e.preventDefault(); e.stopPropagation();
     const bd = boardRef.current; if (!bd) return;
     const handle = e.currentTarget as HTMLElement;
     try { handle.setPointerCapture(e.pointerId); } catch { /* pointeur synthétique : on suit via window */ }
     draggingRef.current = n.id;
     const rect = bd.getBoundingClientRect();
+    // Poignée d'angle : largeur depuis X, hauteur depuis Y (donc horizontal, vertical et diagonale).
     const calc = (ev: PointerEvent) => ({
       w: clamp((ev.clientX - rect.left - n.x * rect.width) / rect.width, 0.05, 0.7),
       h: clamp((ev.clientY - rect.top - n.y * rect.height) / rect.height, 0.04, 0.8),
@@ -239,7 +264,7 @@ function AtelierPostits() {
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
   }
 
-  function onBoardDouble(e: React.MouseEvent<HTMLDivElement>) {
+  function onBoardDouble(e: React.MouseEvent) {
     if ((e.target as HTMLElement).closest('[data-id]')) return;
     const bd = boardRef.current; if (!bd) return;
     const rect = bd.getBoundingClientRect();
@@ -249,42 +274,25 @@ function AtelierPostits() {
   /* ---------- Écran d'accueil animatrice ---------- */
   if (phase === 'setup') {
     return (
-      <div style={S.page}>
-        <header style={S.header}>
-          <div>
-            <div style={S.brand}>{t.brand}</div>
-            <div style={S.sub}>{t.sub}</div>
-          </div>
-          <button style={S.langBtn} onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
-        </header>
-        <div style={S.joinCard}>
-          <h1 style={S.joinTitle}>{t.setupTitle}</h1>
-          <p style={S.joinText}>{t.setupText}</p>
-          <input style={S.input} placeholder={t.boardPh} value={boardInput} onChange={(e) => setBoardInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') openAsAnim(); }} />
-          <button style={S.btnPrimary} onClick={openAsAnim}>{t.open}</button>
-        </div>
-      </div>
+      <div style={S.page}><div style={S.joinCard}>
+        <div style={S.joinTop}><div style={S.brand}>{t.brand}</div><button style={S.langBtn} onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button></div>
+        <h1 style={S.joinTitle}>{t.setupTitle}</h1>
+        <p style={S.joinText}>{t.setupText}</p>
+        <input style={S.input} placeholder={t.boardPh} value={boardInput} onChange={(e) => setBoardInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') openAsAnim(); }} />
+        <button style={{ ...S.btnPrimary, width: '100%' }} onClick={openAsAnim} disabled={!normName(boardInput)}>{t.open}</button>
+      </div></div>
     );
   }
-
   /* ---------- Écran équipe (participant) ---------- */
   if (phase === 'join') {
     return (
-      <div style={S.page}>
-        <header style={S.header}>
-          <div>
-            <div style={S.brand}>{t.brand}</div>
-            <div style={S.sub}>{t.sub}</div>
-          </div>
-          <button style={S.langBtn} onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
-        </header>
-        <div style={S.joinCard}>
-          <h1 style={S.joinTitle}>{t.joinTitle}</h1>
-          <p style={S.joinText}>{t.joinText}</p>
-          <input style={S.input} placeholder={t.teamPh} value={teamInput} onChange={(e) => setTeamInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') joinTeam(); }} />
-          <button style={S.btnPrimary} onClick={joinTeam}>{t.join}</button>
-        </div>
-      </div>
+      <div style={S.page}><div style={S.joinCard}>
+        <div style={S.joinTop}><div style={S.brand}>{t.brand}</div><button style={S.langBtn} onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button></div>
+        <h1 style={S.joinTitle}>{t.joinTitle}</h1>
+        <p style={S.joinText}>{t.joinText}</p>
+        <input style={S.input} placeholder={t.teamPh} value={teamInput} onChange={(e) => setTeamInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') joinTeam(); }} />
+        <button style={{ ...S.btnPrimary, width: '100%' }} onClick={joinTeam} disabled={!normName(teamInput)}>{t.join}</button>
+      </div></div>
     );
   }
 
@@ -293,16 +301,12 @@ function AtelierPostits() {
   return (
     <div style={S.page}>
       <header style={S.header}>
-        <div>
-          <div style={S.brand}>{t.brand}</div>
-          <div style={S.sub}>{t.sub}</div>
-        </div>
+        <div><div style={S.brand}>{t.brand}</div><div style={S.sub}>{t.sub}</div></div>
         <div style={S.hdrRight}>
           <button style={S.langBtn} onClick={toggleLang}>{lang === 'fr' ? 'EN' : 'FR'}</button>
-          <span style={S.chip}>{isAnim ? t.board : t.team} · {isAnim ? board : team}</span>
+          <span style={S.chip}>{isAnim ? t.board : t.team} <b>{isAnim ? board : team}</b></span>
         </div>
       </header>
-
       <main style={S.main}>
         <div style={S.consigne}>{isAnim ? t.consigneAnim : t.consignePlay}</div>
         {err && <div style={S.err}>Base : {err}.</div>}
@@ -312,41 +316,32 @@ function AtelierPostits() {
             <span style={S.animTag}>{t.animOn}</span>
             <button style={S.btnSmall} onClick={toggleImageLock}>{imageLocked ? t.unlockImg : t.lockImg}</button>
             <button style={S.btnSmall} onClick={resetTeams}>{t.resetTeams}</button>
-            <button style={S.btnSmall} onClick={copyParticipant}>{copied ? t.copied : t.copyLink}</button>
+            <button style={{ ...S.btnSmall, marginLeft: 'auto' }} onClick={copyParticipant}>{copied ? t.copied : t.copyLink}</button>
           </div>
         )}
 
         <div style={S.toolbar}>
           <button style={S.btnPrimary} onClick={addNote}>{t.add}</button>
           {canImg && <button style={S.btnGhost} onClick={pickImageUrl}>{t.url}</button>}
-          {canImg && (
-            <label style={S.btnGhost}>
-              {busy ? t.uploading : t.file}
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={onFile} />
-            </label>
-          )}
+          {canImg && <label style={{ ...S.btnGhost, display: 'inline-flex', alignItems: 'center' }}>{busy ? t.uploading : t.file}<input type="file" accept="image/*" onChange={onFile} style={{ display: 'none' }} /></label>}
           {!isAnim && <button style={S.btnGhost} onClick={restartMine}>{t.restart}</button>}
         </div>
 
         <div style={S.boardWrap}>
           <div ref={boardRef} style={S.board} onDoubleClick={onBoardDouble}>
             <div style={S.imgBox}>
-              {imageUrl ? <img src={imageUrl} alt="" style={S.img} /> : <div style={S.empty}><div style={{ fontSize: 36 }}>🖼️</div><div>{t.empty}</div></div>}
+              {imageUrl ? <img src={imageUrl} alt="" style={S.img} draggable={false} /> : <div style={S.empty}><div style={{ fontSize: 42 }}>🖼️</div><div>{t.empty}</div></div>}
             </div>
             {notes.map((n) => {
               const c = COLORS[n.color] || COLORS[0];
               return (
                 <div key={n.id} data-id={n.id} onPointerDown={(e) => startDrag(e, n)}
                   style={{ ...S.note, left: `${n.x * 100}%`, top: `${n.y * 100}%`, width: `${n.w * 100}%`, height: `${n.h * 100}%`, background: c.bg, color: c.fg }}>
-                  <textarea style={S.textarea} value={n.text} placeholder={t.notePh}
-                    onFocus={() => { editingRef.current = n.id; }}
-                    onBlur={() => { if (editingRef.current === n.id) editingRef.current = null; }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => onText(n.id, e.target.value)} />
+                  <textarea style={{ ...S.textarea, color: c.fg }} placeholder={t.notePh} value={n.text}
+                    onFocus={() => { editingRef.current = n.id; }} onBlur={() => { if (editingRef.current === n.id) editingRef.current = null; }}
+                    onPointerDown={(e) => e.stopPropagation()} onChange={(e) => onText(n.id, e.target.value)} />
                   <div style={S.bar} className="note-bar">
-                    <div style={S.swatches}>{COLORS.map((cc, i) => (
-                      <button key={i} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onColor(n.id, i); }} style={{ ...S.swatch, background: cc.bg }} />
-                    ))}</div>
+                    <div style={S.swatches}>{COLORS.map((cc, i) => (<button key={i} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onColor(n.id, i); }} style={{ ...S.swatch, background: cc.bg }} />))}</div>
                     <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteNote(n.id); }} style={S.del}>×</button>
                   </div>
                   <div className="note-grip" style={S.grip} onPointerDown={(e) => startResize(e, n)} title="" />
@@ -392,6 +387,7 @@ const S: Record<string, CSSProperties> = {
   del: { border: 0, background: 'rgba(0,0,0,.12)', color: 'inherit', borderRadius: '50%', width: 18, height: 18, fontSize: 12, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   grip: { position: 'absolute', right: 0, bottom: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 0 15px 15px', borderColor: 'transparent transparent rgba(0,0,0,.38) transparent', cursor: 'nwse-resize', touchAction: 'none' },
   joinCard: { maxWidth: 480, margin: '12vh auto 0', background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 10px 40px rgba(1,30,75,.12)' },
+  joinTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   joinTitle: { fontFamily: 'Arial, sans-serif', color: '#011E4B', fontSize: 22, margin: '10px 0 8px' },
   joinText: { fontSize: 16, lineHeight: 1.5, marginBottom: 16 },
   input: { width: '100%', fontFamily: "'Arial Narrow', Arial, sans-serif", fontSize: 18, padding: '12px 14px', border: '1.5px solid #cfd3dc', borderRadius: 10, marginBottom: 12, boxSizing: 'border-box' },
