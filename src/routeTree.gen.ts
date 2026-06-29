@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ParametresRouteImport } from './routes/parametres'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JeuEtatsFinanciersK7p2x9m4q8a3RouteImport } from './routes/jeu.etats-financiers-k7p2x9m4q8a3'
+import { Route as AtelierPostitsR9k3m7p2x5q8RouteImport } from './routes/atelier.postits-r9k3m7p2x5q8'
 
 const ParametresRoute = ParametresRouteImport.update({
   id: '/parametres',
@@ -29,34 +30,57 @@ const JeuEtatsFinanciersK7p2x9m4q8a3Route =
     path: '/jeu/etats-financiers-k7p2x9m4q8a3',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AtelierPostitsR9k3m7p2x5q8Route =
+  AtelierPostitsR9k3m7p2x5q8RouteImport.update({
+    id: '/atelier/postits-r9k3m7p2x5q8',
+    path: '/atelier/postits-r9k3m7p2x5q8',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/parametres': typeof ParametresRoute
+  '/atelier/postits-r9k3m7p2x5q8': typeof AtelierPostitsR9k3m7p2x5q8Route
   '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/parametres': typeof ParametresRoute
+  '/atelier/postits-r9k3m7p2x5q8': typeof AtelierPostitsR9k3m7p2x5q8Route
   '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/parametres': typeof ParametresRoute
+  '/atelier/postits-r9k3m7p2x5q8': typeof AtelierPostitsR9k3m7p2x5q8Route
   '/jeu/etats-financiers-k7p2x9m4q8a3': typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/parametres' | '/jeu/etats-financiers-k7p2x9m4q8a3'
+  fullPaths:
+    | '/'
+    | '/parametres'
+    | '/atelier/postits-r9k3m7p2x5q8'
+    | '/jeu/etats-financiers-k7p2x9m4q8a3'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/parametres' | '/jeu/etats-financiers-k7p2x9m4q8a3'
-  id: '__root__' | '/' | '/parametres' | '/jeu/etats-financiers-k7p2x9m4q8a3'
+  to:
+    | '/'
+    | '/parametres'
+    | '/atelier/postits-r9k3m7p2x5q8'
+    | '/jeu/etats-financiers-k7p2x9m4q8a3'
+  id:
+    | '__root__'
+    | '/'
+    | '/parametres'
+    | '/atelier/postits-r9k3m7p2x5q8'
+    | '/jeu/etats-financiers-k7p2x9m4q8a3'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ParametresRoute: typeof ParametresRoute
+  AtelierPostitsR9k3m7p2x5q8Route: typeof AtelierPostitsR9k3m7p2x5q8Route
   JeuEtatsFinanciersK7p2x9m4q8a3Route: typeof JeuEtatsFinanciersK7p2x9m4q8a3Route
 }
 
@@ -83,12 +107,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JeuEtatsFinanciersK7p2x9m4q8a3RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/atelier/postits-r9k3m7p2x5q8': {
+      id: '/atelier/postits-r9k3m7p2x5q8'
+      path: '/atelier/postits-r9k3m7p2x5q8'
+      fullPath: '/atelier/postits-r9k3m7p2x5q8'
+      preLoaderRoute: typeof AtelierPostitsR9k3m7p2x5q8RouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ParametresRoute: ParametresRoute,
+  AtelierPostitsR9k3m7p2x5q8Route: AtelierPostitsR9k3m7p2x5q8Route,
   JeuEtatsFinanciersK7p2x9m4q8a3Route: JeuEtatsFinanciersK7p2x9m4q8a3Route,
 }
 export const routeTree = rootRouteImport
