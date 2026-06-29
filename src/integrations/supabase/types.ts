@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      atelier_notes: {
+        Row: {
+          board: string
+          color: number
+          created_at: string
+          h: number
+          id: string
+          team: string
+          text: string
+          tpl: string | null
+          w: number
+          x: number
+          y: number
+        }
+        Insert: {
+          board: string
+          color?: number
+          created_at?: string
+          h?: number
+          id?: string
+          team?: string
+          text?: string
+          tpl?: string | null
+          w?: number
+          x?: number
+          y?: number
+        }
+        Update: {
+          board?: string
+          color?: number
+          created_at?: string
+          h?: number
+          id?: string
+          team?: string
+          text?: string
+          tpl?: string | null
+          w?: number
+          x?: number
+          y?: number
+        }
+        Relationships: []
+      }
+      atelier_rooms: {
+        Row: {
+          board: string
+          created_at: string
+          image_locked: boolean
+          image_url: string | null
+        }
+        Insert: {
+          board: string
+          created_at?: string
+          image_locked?: boolean
+          image_url?: string | null
+        }
+        Update: {
+          board?: string
+          created_at?: string
+          image_locked?: boolean
+          image_url?: string | null
+        }
+        Relationships: []
+      }
       connections: {
         Row: {
           created_at: string
