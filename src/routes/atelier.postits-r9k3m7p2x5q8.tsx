@@ -132,12 +132,15 @@ function AtelierPostits() {
   }
 
   // Une équipe qui arrive sans post-its reçoit une copie du modèle (le stock), à la position de départ.
+  // Insertion simple : ne dépend d'aucun index unique (robuste même si la migration SQL n'a pas tout créé).
   async function cloneTemplateInto(bd: string, tm: string) {
     const tpls = await fetchNotes(bd, TEMPLATE);
     if (!tpls.length) return [] as Note[];
+    // Garde-fou anti-doublon : on ne copie que si l'équipe n'a vraiment encore rien.
+    const existing = await fetchNotes(bd, tm);
+    if (existing.length) return existing;
     const rows = tpls.map((s) => ({ id: uid(), board: bd, team: tm, tpl: s.id, x: s.x, y: s.y, w: s.w, h: s.h, text: s.text, color: s.color }));
-    // upsert (board,team,tpl) unique : deux coéquipiers qui arrivent en même temps ne dupliquent pas.
-    const { error } = await supabase.from('atelier_notes').upsert(rows, { onConflict: 'board,team,tpl', ignoreDuplicates: true });
+    const { error } = await supabase.from('atelier_notes').insert(rows);
     if (error) console.error('clone', error);
     return await fetchNotes(bd, tm);
   }
