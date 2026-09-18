@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import atelierBilan from '@/assets/atelier-bilan.png.asset.json';
 import atelierBilanDetailleFr from '@/assets/atelier-bilan-detaille-fr.png.asset.json';
+import atelierBilanDetailleEn from '@/assets/atelier-bilan-detaille-en.png.asset.json';
 
 // Route secrète (lien mystère). Ne pas deviner : seul ce lien donne accès aux ateliers.
 export const Route = createFileRoute('/atelier/postits-r9k3m7p2x5q8')({
