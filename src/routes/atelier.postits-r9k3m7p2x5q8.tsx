@@ -348,7 +348,7 @@ function AtelierPostits() {
         <div style={S.boardWrap}>
           <div ref={boardRef} style={S.board} onDoubleClick={onBoardDouble}>
             <div style={S.imgBox}>
-              {(lang === 'fr' ? atelierBilanDetailleFr.url : imageUrl) ? <img src={lang === 'fr' ? atelierBilanDetailleFr.url : imageUrl} alt="" style={S.img} draggable={false} /> : <div style={S.empty}><div style={{ fontSize: 42 }}>🖼️</div><div>{t.empty}</div></div>}
+              {(lang === 'fr' ? atelierBilanDetailleFr.url : atelierBilanDetailleEn.url) ? <img src={lang === 'fr' ? atelierBilanDetailleFr.url : atelierBilanDetailleEn.url} alt="" style={S.img} draggable={false} /> : <div style={S.empty}><div style={{ fontSize: 42 }}>🖼️</div><div>{t.empty}</div></div>}
             </div>
             {notes.map((n) => {
               const c = COLORS[n.color] || COLORS[0];
