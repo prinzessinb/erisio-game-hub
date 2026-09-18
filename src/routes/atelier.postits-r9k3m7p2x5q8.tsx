@@ -272,7 +272,6 @@ function AtelierPostits() {
   const onColor = (id: string, color: number) => { patchLocal(id, { color }); writeNow(id, { color }); };
 
   function beginEdit(id: string) {
-    if (!isAnim) return;
     editingRef.current = id;
     setEditingNoteId(id);
     window.setTimeout(() => {
@@ -427,11 +426,11 @@ function AtelierPostits() {
                   onDoubleClick={(e) => { if (isAnim) { e.preventDefault(); e.stopPropagation(); beginEdit(n.id); } }}
                   style={{ ...S.note, cursor: draggingId === n.id ? 'grabbing' : 'grab', left: `${n.x * 100}%`, top: `${n.y * 100}%`, width: `${n.w * 100}%`, height: `${n.h * 100}%`, background: c.bg, color: c.fg }}>
                   <textarea style={{ ...S.textarea, color: c.fg, pointerEvents: editingNoteId === n.id ? 'auto' : 'none', userSelect: editingNoteId === n.id ? 'text' : 'none' }} placeholder={t.notePh} value={n.text}
-                    readOnly={!isAnim || editingNoteId !== n.id}
+                    readOnly={editingNoteId !== n.id}
                     onFocus={() => { if (isAnim && editingNoteId === n.id) editingRef.current = n.id; }} onBlur={() => { endEdit(n.id); }}
                     onPointerDown={(e) => { if (editingNoteId === n.id) e.stopPropagation(); }}
                     onKeyDown={(e) => { if (e.key === 'Escape') { e.currentTarget.blur(); endEdit(n.id); } }}
-                    onChange={(e) => { if (isAnim && editingNoteId === n.id) onText(n.id, e.target.value); }} />
+                    onChange={(e) => { if (editingNoteId === n.id) onText(n.id, e.target.value); }} />
                   {isAnim ? (
                     <>
                       <div style={S.bar} className="note-bar">
