@@ -42,7 +42,7 @@ const T: Record<Lang, Record<string, string>> = {
     joinTitle: 'Sticky-note workshop', joinText: 'Enter your team name. You receive your copy of the sticky notes to place on the image. Teammates type the same name to join you.',
     teamPh: 'Team name', join: 'Join', board: 'Board', team: 'Team',
     consigneAnim: 'Facilitator view: prepare the template. Place the image, add your notes and tuck them in a corner. Their position here is each team’s starting position.',
-    consignePlay: 'Place your sticky notes on the image to show where each item goes. Drag them, resize them, write on them.',
+    consignePlay: 'Here is a balance sheet, drag your post-its and place them on the corresponding items.',
     add: '+ Add a sticky note', url: 'Image by link', file: 'Image from computer',
     empty: 'No image yet. Choose an image by link or from your computer, then add sticky notes.',
     urlPrompt: 'Paste the image address (URL):', notePh: 'Write here…', uploading: 'Uploading image…',
