@@ -26,7 +26,7 @@ const T: Record<Lang, Record<string, string>> = {
     joinTitle: 'Atelier post-its', joinText: 'Saisis le nom de ton équipe. Tu reçois ta copie des post-its à placer sur l’image. Tes coéquipiers tapent le même nom pour vous retrouver.',
     teamPh: 'Nom de l’équipe', join: 'Rejoindre', board: 'Tableau', team: 'Équipe',
     consigneAnim: 'Vue animatrice : tu prépares le modèle. Pose l’image, ajoute tes post-its et range-les dans un coin. Leur position ici est la position de départ de chaque équipe.',
-    consignePlay: 'Placez vos post-its sur l’image pour dire où va chaque élément. Glissez-les, redimensionnez-les, écrivez dessus.',
+    consignePlay: 'Voici un bilan. Glissez vos post-its et placez-les sur chaque élément correspondant.',
     add: '+ Ajouter un post-it', url: 'Image par lien', file: 'Image depuis l’ordinateur',
     empty: 'Aucune image. Choisissez une image par lien ou depuis l’ordinateur, puis ajoutez des post-its.',
     urlPrompt: 'Colle l’adresse (URL) de l’image :', notePh: 'Écris ici…', uploading: 'Envoi de l’image…',
