@@ -75,6 +75,12 @@ const localizedBoard = (board: string, lang: Lang) => {
   if (base !== 'bilan' && base !== 'bilan-detaille') return board;
   return lang === 'en' ? `${base}-en` : base;
 };
+const imageForBoard = (board: string, lang: Lang) => {
+  const base = board.endsWith('-en') ? board.slice(0, -3) : board;
+  if (base === 'bilan-detaille') return lang === 'fr' ? atelierBilanDetailleFr.url : atelierBilanDetailleEn.url;
+  if (base === 'bilan') return atelierBilan.url;
+  return '';
+};
 const uid = () => { try { return crypto.randomUUID(); } catch { return 'n' + Date.now() + Math.round(Math.random() * 1e6); } };
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 function readParams() {
@@ -160,9 +166,10 @@ function AtelierPostits() {
   }
 
   async function loadRoom(bd: string) {
-    await supabase.from('atelier_rooms').upsert({ board: bd, image_url: atelierBilan.url }, { onConflict: 'board', ignoreDuplicates: true });
+    const defaultImage = imageForBoard(bd, lang) || atelierBilan.url;
+    await supabase.from('atelier_rooms').upsert({ board: bd, image_url: defaultImage }, { onConflict: 'board', ignoreDuplicates: true });
     const { data: room } = await supabase.from('atelier_rooms').select('*').eq('board', bd).single();
-    if (room) { setImageUrl(room.image_url || atelierBilan.url); setImageLocked(!!room.image_locked); }
+    if (room) { setImageUrl(room.image_url || defaultImage); setImageLocked(!!room.image_locked); }
   }
 
   // Une équipe qui arrive sans post-its reçoit une copie du modèle (le stock), à la position de départ.
@@ -343,6 +350,8 @@ function AtelierPostits() {
 
   /* ---------- Tableau ---------- */
   const canImg = isAnim && !imageLocked;
+  const fixedWorkshopImage = imageForBoard(board, lang);
+  const displayedImage = fixedWorkshopImage || imageUrl;
   return (
     <div style={S.page}>
       <header style={S.header}>
@@ -375,7 +384,7 @@ function AtelierPostits() {
         <div style={S.boardWrap}>
           <div ref={boardRef} style={S.board} onDoubleClick={onBoardDouble}>
             <div style={S.imgBox}>
-              {(lang === 'fr' ? atelierBilanDetailleFr.url : atelierBilanDetailleEn.url) ? <img src={lang === 'fr' ? atelierBilanDetailleFr.url : atelierBilanDetailleEn.url} alt="" style={S.img} draggable={false} /> : <div style={S.empty}><div style={{ fontSize: 42 }}>🖼️</div><div>{t.empty}</div></div>}
+              {displayedImage ? <img src={displayedImage} alt="" style={S.img} draggable={false} /> : <div style={S.empty}><div style={{ fontSize: 42 }}>🖼️</div><div>{t.empty}</div></div>}
             </div>
             {notes.map((n) => {
               const c = COLORS[n.color] || COLORS[0];
