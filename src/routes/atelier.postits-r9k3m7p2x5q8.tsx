@@ -70,10 +70,19 @@ const T: Record<Lang, Record<string, string>> = {
 
 const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
 const detectLang = (): Lang => { try { return new URLSearchParams(window.location.search).get('lang') === 'en' ? 'en' : 'fr'; } catch { return 'fr'; } };
+const localizedBoard = (board: string, lang: Lang) => {
+  const base = board.endsWith('-en') ? board.slice(0, -3) : board;
+  if (base !== 'bilan' && base !== 'bilan-detaille') return board;
+  return lang === 'en' ? `${base}-en` : base;
+};
 const uid = () => { try { return crypto.randomUUID(); } catch { return 'n' + Date.now() + Math.round(Math.random() * 1e6); } };
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 function readParams() {
-  try { const q = new URLSearchParams(window.location.search); return { board: normName(q.get('board') || ''), anim: q.get('anim') === ADMIN_KEY }; }
+  try {
+    const q = new URLSearchParams(window.location.search);
+    const lang: Lang = q.get('lang') === 'en' ? 'en' : 'fr';
+    return { board: localizedBoard(normName(q.get('board') || ''), lang), anim: q.get('anim') === ADMIN_KEY };
+  }
   catch { return { board: '', anim: false }; }
 }
 
@@ -130,8 +139,18 @@ function AtelierPostits() {
 
   function toggleLang() {
     const nl: Lang = lang === 'fr' ? 'en' : 'fr';
+    const nextBoard = localizedBoard(board, nl);
     setLang(nl);
-    try { const u = new URL(window.location.href); u.searchParams.set('lang', nl); window.history.replaceState({}, '', u.toString()); } catch {}
+    if (nextBoard !== board) {
+      setBoard(nextBoard);
+      if (phase === 'board') enterBoard(nextBoard, myTeam);
+    }
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set('lang', nl);
+      if (nextBoard) u.searchParams.set('board', nextBoard);
+      window.history.replaceState({}, '', u.toString());
+    } catch {}
   }
 
   async function fetchNotes(bd: string, tm: string) {
@@ -170,7 +189,7 @@ function AtelierPostits() {
   useEffect(() => { if (init.board && init.anim) enterBoard(init.board, TEMPLATE); /* eslint-disable-next-line */ }, []);
 
   function openAsAnim() {
-    const bd = normName(boardInput); if (!bd) return;
+    const bd = localizedBoard(normName(boardInput), lang); if (!bd) return;
     setBoard(bd); setTeam(TEMPLATE); setPhase('board');
     try { const u = new URL(window.location.href); u.searchParams.set('board', bd); u.searchParams.set('anim', ADMIN_KEY); window.history.replaceState({}, '', u.toString()); } catch {}
     enterBoard(bd, TEMPLATE);
@@ -181,7 +200,15 @@ function AtelierPostits() {
     enterBoard(board, tm);
   }
 
-  function participantLink() { try { const u = new URL(window.location.href); u.searchParams.set('board', board); u.searchParams.delete('anim'); u.searchParams.delete('lang'); return u.toString(); } catch { return ''; } }
+  function participantLink() {
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set('board', board);
+      u.searchParams.delete('anim');
+      if (lang === 'en') u.searchParams.set('lang', 'en'); else u.searchParams.delete('lang');
+      return u.toString();
+    } catch { return ''; }
+  }
   async function copyParticipant() { try { await navigator.clipboard.writeText(participantLink()); setCopied(true); window.setTimeout(() => setCopied(false), 1800); } catch {} }
 
   // Temps réel : on ne garde que les évènements de la vue courante (modèle pour l'animatrice, sa propre équipe pour un participant).
