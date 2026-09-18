@@ -1,9 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import atelierBilan from '@/assets/atelier-bilan.png.asset.json';
 
 // Route secrète (lien mystère). Ne pas deviner : seul ce lien donne accès aux ateliers.
-export const Route = createFileRoute('/atelier/postits-r9k3m7p2x5q8')({ component: AtelierPostits });
+export const Route = createFileRoute('/atelier/postits-r9k3m7p2x5q8')({
+  head: () => ({
+    meta: [
+      { title: 'Atelier post-its | Erisio Academy' },
+      { name: 'description', content: 'Atelier collaboratif bilingue de classement des éléments du bilan.' },
+      { property: 'og:title', content: 'Atelier post-its | Erisio Academy' },
+      { property: 'og:description', content: 'Atelier collaboratif bilingue de classement des éléments du bilan.' },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary' },
+    ],
+  }),
+  component: AtelierPostits,
+});
 
 // Clé animatrice. Le lien animatrice porte ?anim=<cette clé> ; le lien participant ne la porte pas.
 const ADMIN_KEY = 'eris-9k2p7x5q';
@@ -126,9 +139,9 @@ function AtelierPostits() {
   }
 
   async function loadRoom(bd: string) {
-    await supabase.from('atelier_rooms').upsert({ board: bd }, { onConflict: 'board', ignoreDuplicates: true });
+    await supabase.from('atelier_rooms').upsert({ board: bd, image_url: atelierBilan.url }, { onConflict: 'board', ignoreDuplicates: true });
     const { data: room } = await supabase.from('atelier_rooms').select('*').eq('board', bd).single();
-    if (room) { if (room.image_url) setImageUrl(room.image_url); setImageLocked(!!room.image_locked); }
+    if (room) { setImageUrl(room.image_url || atelierBilan.url); setImageLocked(!!room.image_locked); }
   }
 
   // Une équipe qui arrive sans post-its reçoit une copie du modèle (le stock), à la position de départ.
