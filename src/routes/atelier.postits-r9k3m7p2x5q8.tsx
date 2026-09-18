@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Hand } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import atelierBilan from '@/assets/atelier-bilan.png.asset.json';
 import atelierBilanDetailleFr from '@/assets/atelier-bilan-detaille-fr.png.asset.json';
@@ -136,10 +135,13 @@ function AtelierPostits() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const boardRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef<string | null>(null);
   const editingRef = useRef<string | null>(null);
+  const lastTapRef = useRef<{ id: string; t: number; x: number; y: number } | null>(null);
   const viewTeamRef = useRef<string>(init.anim ? TEMPLATE : '');
   const writeTimers = useRef<Record<string, number>>({});
 
@@ -258,7 +260,7 @@ function AtelierPostits() {
     setNotes((prev) => [...prev, n]);
     const { error } = await supabase.from('atelier_notes').insert({ board, ...n });
     if (error) setErr(error.message);
-    setTimeout(() => { const el = document.querySelector<HTMLTextAreaElement>(`[data-id="${n.id}"] textarea`); if (el) el.focus(); }, 0);
+    if (isAnim) beginEdit(n.id);
   }
   const addNote = () => addNoteAt(isAnim ? 0.04 : 0.44, isAnim ? 0.05 : 0.40);
 
@@ -268,6 +270,20 @@ function AtelierPostits() {
   async function deleteNote(id: string) { setNotes((prev) => prev.filter((x) => x.id !== id)); await supabase.from('atelier_notes').delete().eq('id', id); }
   const onText = (id: string, v: string) => { patchLocal(id, { text: v }); scheduleWrite(id, { text: v }); };
   const onColor = (id: string, color: number) => { patchLocal(id, { color }); writeNow(id, { color }); };
+
+  function beginEdit(id: string) {
+    editingRef.current = id;
+    setEditingNoteId(id);
+    window.setTimeout(() => {
+      const el = document.querySelector<HTMLTextAreaElement>(`[data-id="${id}"] textarea`);
+      if (el) { el.focus(); el.select(); }
+    }, 0);
+  }
+
+  function endEdit(id: string) {
+    if (editingRef.current === id) editingRef.current = null;
+    setEditingNoteId((current) => (current === id ? null : current));
+  }
 
   // Ranger : remet les post-its dans le coin de départ (on les recrée à partir du modèle).
   async function resetTeams() {
@@ -284,39 +300,53 @@ function AtelierPostits() {
   /* ---------- Déplacement ---------- */
   function startDrag(e: React.PointerEvent, n: Note) {
     const target = e.target as HTMLElement;
-    if (target.closest('textarea') || target.closest('button')) return;
+    if (target.closest('button')) return;
+    if (editingNoteId === n.id && target.closest('textarea')) return;
+
+    if (editingNoteId !== n.id) {
+      const now = Date.now();
+      const last = lastTapRef.current;
+      if (last && last.id === n.id && now - last.t < 380 && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 24) {
+        e.preventDefault();
+        e.stopPropagation();
+        lastTapRef.current = null;
+        beginEdit(n.id);
+        return;
+      }
+      lastTapRef.current = { id: n.id, t: now, x: e.clientX, y: e.clientY };
+    }
+
     e.preventDefault();
+    e.stopPropagation();
     const bd = boardRef.current; if (!bd) return;
     const el = e.currentTarget as HTMLElement;
     try { el.setPointerCapture(e.pointerId); } catch { /* pointeur synthétique : on suit via window */ }
     draggingRef.current = n.id;
+    setDraggingId(n.id);
+    const previousCursor = document.body.style.cursor;
+    const previousSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
     const rect = bd.getBoundingClientRect(); const nb = el.getBoundingClientRect();
     const offX = e.clientX - nb.left, offY = e.clientY - nb.top;
     const wf = nb.width / rect.width, hf = nb.height / rect.height;
     // On autorise un débordement (jusqu'à ~80% hors du bord) ; la surface n'est pas rognée,
     // donc le post-it reste visible même posé au-delà du cadre. Le haut reste accessible.
     const calc = (ev: PointerEvent) => ({ x: clamp((ev.clientX - offX - rect.left) / rect.width, -wf * 0.8, 1 - wf * 0.2), y: clamp((ev.clientY - offY - rect.top) / rect.height, -hf * 0.2, 1 - hf * 0.2) });
-    const move = (ev: PointerEvent) => patchLocal(n.id, calc(ev));
-    const up = (ev: PointerEvent) => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); draggingRef.current = null; writeNow(n.id, calc(ev)); };
+    const move = (ev: PointerEvent) => { ev.preventDefault(); patchLocal(n.id, calc(ev)); };
+    const up = (ev: PointerEvent) => {
+      ev.preventDefault();
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      draggingRef.current = null;
+      setDraggingId(null);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousSelect;
+      writeNow(n.id, calc(ev));
+    };
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
-  }
-
-  /* ---------- Redimensionnement ---------- */
-  function startResize(e: React.PointerEvent, n: Note) {
-    e.preventDefault(); e.stopPropagation();
-    const bd = boardRef.current; if (!bd) return;
-    const handle = e.currentTarget as HTMLElement;
-    try { handle.setPointerCapture(e.pointerId); } catch { /* pointeur synthétique : on suit via window */ }
-    draggingRef.current = n.id;
-    const rect = bd.getBoundingClientRect();
-    // Poignée d'angle : largeur depuis X, hauteur depuis Y (donc horizontal, vertical et diagonale).
-    const calc = (ev: PointerEvent) => ({
-      w: clamp((ev.clientX - rect.left - n.x * rect.width) / rect.width, 0.05, 0.7),
-      h: clamp((ev.clientY - rect.top - n.y * rect.height) / rect.height, 0.04, 0.8),
-    });
-    const move = (ev: PointerEvent) => patchLocal(n.id, calc(ev));
-    const up = (ev: PointerEvent) => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); draggingRef.current = null; writeNow(n.id, calc(ev)); };
-    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   }
 
   function onBoardDouble(e: React.MouseEvent) {
@@ -393,29 +423,29 @@ function AtelierPostits() {
               const c = COLORS[n.color] || COLORS[0];
               return (
                 <div key={n.id} data-id={n.id} onPointerDown={(e) => startDrag(e, n)}
-                  style={{ ...S.note, left: `${n.x * 100}%`, top: `${n.y * 100}%`, width: `${n.w * 100}%`, height: `${n.h * 100}%`, background: c.bg, color: c.fg }}>
-                  <textarea style={{ ...S.textarea, color: c.fg }} placeholder={t.notePh} value={n.text}
-                    readOnly={!isAnim}
-                    onFocus={() => { editingRef.current = n.id; }} onBlur={() => { if (editingRef.current === n.id) editingRef.current = null; }}
-                    onPointerDown={(e) => { if (isAnim) e.stopPropagation(); }} onChange={(e) => { if (isAnim) onText(n.id, e.target.value); }} />
+                  onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); beginEdit(n.id); }}
+                  style={{ ...S.note, cursor: draggingId === n.id ? 'grabbing' : 'grab', left: `${n.x * 100}%`, top: `${n.y * 100}%`, width: `${n.w * 100}%`, height: `${n.h * 100}%`, background: c.bg, color: c.fg }}>
+                  <textarea style={{ ...S.textarea, color: c.fg, pointerEvents: editingNoteId === n.id ? 'auto' : 'none', userSelect: editingNoteId === n.id ? 'text' : 'none' }} placeholder={t.notePh} value={n.text}
+                    readOnly={editingNoteId !== n.id}
+                    onFocus={() => { if (isAnim && editingNoteId === n.id) editingRef.current = n.id; }} onBlur={() => { endEdit(n.id); }}
+                    onPointerDown={(e) => { if (editingNoteId === n.id) e.stopPropagation(); }}
+                    onKeyDown={(e) => { if (e.key === 'Escape') { e.currentTarget.blur(); endEdit(n.id); } }}
+                    onChange={(e) => { if (editingNoteId === n.id) onText(n.id, e.target.value); }} />
                   {isAnim ? (
                     <>
                       <div style={S.bar} className="note-bar">
                         <div style={S.swatches}>{COLORS.map((cc, i) => (<button key={i} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onColor(n.id, i); }} style={{ ...S.swatch, background: cc.bg }} />))}</div>
                         <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteNote(n.id); }} style={S.del}>×</button>
                       </div>
-                      <div className="note-grip" style={S.grip} onPointerDown={(e) => startResize(e, n)} title="" />
                     </>
-                  ) : (
-                    <div style={S.hand} aria-label={t.move} title={t.move}><Hand size={20} strokeWidth={2.2} /></div>
-                  )}
+                  ) : null}
                 </div>
               );
             })}
           </div>
         </div>
       </main>
-      <style>{`.note-bar,.note-grip{opacity:0;transition:opacity .12s}[data-id]:hover .note-bar,[data-id]:hover .note-grip{opacity:1}
+      <style>{`.note-bar{opacity:0;transition:opacity .12s}[data-id]:hover .note-bar{opacity:1}
         [data-id] textarea::placeholder{color:inherit;opacity:.45}`}</style>
     </div>
   );
@@ -443,14 +473,12 @@ const S: Record<string, CSSProperties> = {
   imgBox: { width: '60%', margin: '13% auto' },
   img: { display: 'block', width: '100%', height: 'auto', pointerEvents: 'none', boxShadow: '0 2px 10px rgba(0,0,0,.12)', borderRadius: 4 },
   empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 280, color: '#6b6770', textAlign: 'center', padding: 24, background: '#fff', borderRadius: 6 },
-  note: { position: 'absolute', containerType: 'inline-size', minHeight: 36, padding: '7px 7px 20px', borderRadius: 3, boxShadow: '0 6px 14px rgba(0,0,0,.22)', display: 'flex', flexDirection: 'column' },
-  textarea: { flex: 1, border: 0, background: 'transparent', resize: 'none', fontFamily: "'Comic Sans MS','Segoe Print','Arial Narrow',sans-serif", fontSize: 'clamp(11px, 13cqi, 22px)', lineHeight: 1.2, outline: 'none', minHeight: 40, overflowY: 'auto' },
+  note: { position: 'absolute', containerType: 'inline-size', minHeight: 36, padding: '7px 7px 20px', borderRadius: 3, boxShadow: '0 6px 14px rgba(0,0,0,.22)', display: 'flex', flexDirection: 'column', touchAction: 'none', userSelect: 'none' },
+  textarea: { flex: 1, border: 0, background: 'transparent', resize: 'none', appearance: 'none', fontFamily: "'Comic Sans MS','Segoe Print','Arial Narrow',sans-serif", fontSize: 'clamp(11px, 13cqi, 22px)', lineHeight: 1.2, outline: 'none', minHeight: 40, overflowY: 'auto' },
   bar: { position: 'absolute', left: 6, right: 6, bottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   swatches: { display: 'flex', gap: 3 },
   swatch: { width: 12, height: 12, borderRadius: '50%', border: '1px solid rgba(0,0,0,.25)', cursor: 'pointer', padding: 0 },
   del: { border: 0, background: 'rgba(0,0,0,.12)', color: 'inherit', borderRadius: '50%', width: 18, height: 18, fontSize: 12, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
-  grip: { position: 'absolute', right: 0, bottom: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 0 15px 15px', borderColor: 'transparent transparent rgba(0,0,0,.38) transparent', cursor: 'nwse-resize', touchAction: 'none' },
-  hand: { position: 'absolute', right: 6, bottom: 5, width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,.72)', color: 'rgba(0,0,0,.68)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', boxShadow: '0 1px 4px rgba(0,0,0,.16)' },
   joinCard: { maxWidth: 480, margin: '12vh auto 0', background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 10px 40px rgba(1,30,75,.12)' },
   joinTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   joinTitle: { fontFamily: 'Arial, sans-serif', color: '#011E4B', fontSize: 22, margin: '10px 0 8px' },
