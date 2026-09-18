@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Hand } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import atelierBilan from '@/assets/atelier-bilan.png.asset.json';
 import atelierBilanDetailleFr from '@/assets/atelier-bilan-detaille-fr.png.asset.json';
@@ -49,6 +50,7 @@ const T: Record<Lang, Record<string, string>> = {
     resetTeams: 'Réinitialiser les équipes', confirmReset: 'Remettre les post-its de toutes les équipes dans le coin de départ ?',
     restart: 'Tout ranger', confirmRestart: 'Remettre tes post-its dans le coin de départ ?',
     animOn: 'Mode animatrice', copyLink: 'Copier le lien participant', copied: 'Lien copié',
+    move: 'Déplacer le post-it',
   },
   en: {
     brand: 'ERISIO ACADEMY', sub: 'Sticky-note workshop',
@@ -65,6 +67,7 @@ const T: Record<Lang, Record<string, string>> = {
     resetTeams: 'Reset teams', confirmReset: 'Send every team’s notes back to the starting corner?',
     restart: 'Tidy up', confirmRestart: 'Send your notes back to the starting corner?',
     animOn: 'Facilitator mode', copyLink: 'Copy participant link', copied: 'Link copied',
+    move: 'Move sticky note',
   },
 };
 
@@ -375,7 +378,7 @@ function AtelierPostits() {
         )}
 
         <div style={S.toolbar}>
-          <button style={S.btnPrimary} onClick={addNote}>{t.add}</button>
+          {isAnim && <button style={S.btnPrimary} onClick={addNote}>{t.add}</button>}
           {canImg && <button style={S.btnGhost} onClick={pickImageUrl}>{t.url}</button>}
           {canImg && <label style={{ ...S.btnGhost, display: 'inline-flex', alignItems: 'center' }}>{busy ? t.uploading : t.file}<input type="file" accept="image/*" onChange={onFile} style={{ display: 'none' }} /></label>}
           {!isAnim && <button style={S.btnGhost} onClick={restartMine}>{t.restart}</button>}
@@ -392,13 +395,20 @@ function AtelierPostits() {
                 <div key={n.id} data-id={n.id} onPointerDown={(e) => startDrag(e, n)}
                   style={{ ...S.note, left: `${n.x * 100}%`, top: `${n.y * 100}%`, width: `${n.w * 100}%`, height: `${n.h * 100}%`, background: c.bg, color: c.fg }}>
                   <textarea style={{ ...S.textarea, color: c.fg }} placeholder={t.notePh} value={n.text}
+                    readOnly={!isAnim}
                     onFocus={() => { editingRef.current = n.id; }} onBlur={() => { if (editingRef.current === n.id) editingRef.current = null; }}
-                    onPointerDown={(e) => e.stopPropagation()} onChange={(e) => onText(n.id, e.target.value)} />
-                  <div style={S.bar} className="note-bar">
-                    <div style={S.swatches}>{COLORS.map((cc, i) => (<button key={i} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onColor(n.id, i); }} style={{ ...S.swatch, background: cc.bg }} />))}</div>
-                    <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteNote(n.id); }} style={S.del}>×</button>
-                  </div>
-                  <div className="note-grip" style={S.grip} onPointerDown={(e) => startResize(e, n)} title="" />
+                    onPointerDown={(e) => { if (isAnim) e.stopPropagation(); }} onChange={(e) => { if (isAnim) onText(n.id, e.target.value); }} />
+                  {isAnim ? (
+                    <>
+                      <div style={S.bar} className="note-bar">
+                        <div style={S.swatches}>{COLORS.map((cc, i) => (<button key={i} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onColor(n.id, i); }} style={{ ...S.swatch, background: cc.bg }} />))}</div>
+                        <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteNote(n.id); }} style={S.del}>×</button>
+                      </div>
+                      <div className="note-grip" style={S.grip} onPointerDown={(e) => startResize(e, n)} title="" />
+                    </>
+                  ) : (
+                    <div style={S.hand} aria-label={t.move} title={t.move}><Hand size={20} strokeWidth={2.2} /></div>
+                  )}
                 </div>
               );
             })}
@@ -440,6 +450,7 @@ const S: Record<string, CSSProperties> = {
   swatch: { width: 12, height: 12, borderRadius: '50%', border: '1px solid rgba(0,0,0,.25)', cursor: 'pointer', padding: 0 },
   del: { border: 0, background: 'rgba(0,0,0,.12)', color: 'inherit', borderRadius: '50%', width: 18, height: 18, fontSize: 12, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
   grip: { position: 'absolute', right: 0, bottom: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 0 15px 15px', borderColor: 'transparent transparent rgba(0,0,0,.38) transparent', cursor: 'nwse-resize', touchAction: 'none' },
+  hand: { position: 'absolute', right: 6, bottom: 5, width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,.72)', color: 'rgba(0,0,0,.68)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', boxShadow: '0 1px 4px rgba(0,0,0,.16)' },
   joinCard: { maxWidth: 480, margin: '12vh auto 0', background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 10px 40px rgba(1,30,75,.12)' },
   joinTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   joinTitle: { fontFamily: 'Arial, sans-serif', color: '#011E4B', fontSize: 22, margin: '10px 0 8px' },
