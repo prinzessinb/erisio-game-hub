@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import atelierBilan from '@/assets/atelier-bilan.png.asset.json';
 import atelierBilanDetailleFr from '@/assets/atelier-bilan-detaille-fr.png.asset.json';
+import atelierBilanDetailleEn from '@/assets/atelier-bilan-detaille-en.png.asset.json';
 
 // Route secrète (lien mystère). Ne pas deviner : seul ce lien donne accès aux ateliers.
 export const Route = createFileRoute('/atelier/postits-r9k3m7p2x5q8')({
@@ -347,7 +348,7 @@ function AtelierPostits() {
         <div style={S.boardWrap}>
           <div ref={boardRef} style={S.board} onDoubleClick={onBoardDouble}>
             <div style={S.imgBox}>
-              {(lang === 'fr' ? atelierBilanDetailleFr.url : imageUrl) ? <img src={lang === 'fr' ? atelierBilanDetailleFr.url : imageUrl} alt="" style={S.img} draggable={false} /> : <div style={S.empty}><div style={{ fontSize: 42 }}>🖼️</div><div>{t.empty}</div></div>}
+              {(lang === 'fr' ? atelierBilanDetailleFr.url : atelierBilanDetailleEn.url) ? <img src={lang === 'fr' ? atelierBilanDetailleFr.url : atelierBilanDetailleEn.url} alt="" style={S.img} draggable={false} /> : <div style={S.empty}><div style={{ fontSize: 42 }}>🖼️</div><div>{t.empty}</div></div>}
             </div>
             {notes.map((n) => {
               const c = COLORS[n.color] || COLORS[0];
