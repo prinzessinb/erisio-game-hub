@@ -303,7 +303,7 @@ function AtelierPostits() {
     if (target.closest('button')) return;
     if (editingNoteId === n.id && target.closest('textarea')) return;
 
-    if (isAnim && editingNoteId !== n.id) {
+    if (editingNoteId !== n.id) {
       const now = Date.now();
       const last = lastTapRef.current;
       if (last && last.id === n.id && now - last.t < 380 && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 24) {
@@ -423,7 +423,7 @@ function AtelierPostits() {
               const c = COLORS[n.color] || COLORS[0];
               return (
                 <div key={n.id} data-id={n.id} onPointerDown={(e) => startDrag(e, n)}
-                  onDoubleClick={(e) => { if (isAnim) { e.preventDefault(); e.stopPropagation(); beginEdit(n.id); } }}
+                  onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); beginEdit(n.id); }}
                   style={{ ...S.note, cursor: draggingId === n.id ? 'grabbing' : 'grab', left: `${n.x * 100}%`, top: `${n.y * 100}%`, width: `${n.w * 100}%`, height: `${n.h * 100}%`, background: c.bg, color: c.fg }}>
                   <textarea style={{ ...S.textarea, color: c.fg, pointerEvents: editingNoteId === n.id ? 'auto' : 'none', userSelect: editingNoteId === n.id ? 'text' : 'none' }} placeholder={t.notePh} value={n.text}
                     readOnly={editingNoteId !== n.id}
